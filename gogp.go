@@ -27,29 +27,17 @@ type OGP struct {
 
 // Gogp returns ogp json string.
 func Gogp(w http.ResponseWriter, r *http.Request) {
-	reqbody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("ioutil.ReadAll: %v", err)
+	q := r.URL.Query()
+	v, ok := q["url"]
+	if !ok {
 		http.Error(w, "Error reading request", http.StatusBadRequest)
 		return
 	}
 
-	req := request{}
-	if err = json.Unmarshal(reqbody, &req); err != nil {
-		log.Printf("json.Unmarshal: %v", err)
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
-	if req.URL == "" {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
-	res, err := http.Get(req.URL)
+	res, err := http.Get(v[0])
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Cannot access "+req.URL, http.StatusInternalServerError)
+		http.Error(w, "Cannot access "+v[0], http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
