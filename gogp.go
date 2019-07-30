@@ -18,11 +18,13 @@ type request struct {
 
 // OGP metadata.
 type OGP struct {
+	SiteName    string `json:"site_name"`
 	Title       string `json:"title"`
 	Type        string `json:"type"`
 	Image       string `json:"image"`
 	URL         string `json:"url"`
 	Description string `json:"description"`
+	Favicon     string `json:"favicon"`
 }
 
 // Gogp returns ogp json string.
@@ -73,6 +75,28 @@ func traverse(node *html.Node, ogp *OGP) {
 		return
 	}
 
+	if node.DataAtom == atom.Link {
+		mk, mv := "", ""
+		for _, attr := range node.Attr {
+			if attr.Key == "rel" && attr.Val == "icon" {
+				mk = attr.Val
+				continue
+			}
+
+			if attr.Key == "href" {
+				mv = attr.Val
+				continue
+			}
+		}
+
+		if mk != "" {
+			switch mk {
+			case "icon":
+				ogp.Favicon = mv
+			}
+		}
+	}
+
 	if node.DataAtom == atom.Meta {
 		mk, mv := "", ""
 		for _, attr := range node.Attr {
@@ -89,6 +113,8 @@ func traverse(node *html.Node, ogp *OGP) {
 
 		if mk != "" {
 			switch mk {
+			case "og:site_name":
+				ogp.SiteName = mv
 			case "og:title":
 				ogp.Title = mv
 			case "og:type":
@@ -97,6 +123,8 @@ func traverse(node *html.Node, ogp *OGP) {
 				ogp.URL = mv
 			case "og:image":
 				ogp.Image = mv
+			case "og:description":
+				ogp.Description = mv
 			}
 		}
 	}
