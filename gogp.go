@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -25,6 +26,7 @@ type OGP struct {
 	URL         string `json:"url"`
 	Description string `json:"description"`
 	Favicon     string `json:"favicon"`
+	SiteURL     string `json:"site_url"`
 }
 
 // Gogp returns ogp json string.
@@ -59,20 +61,26 @@ func Gogp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ogp := &OGP{}
-	traverse(doc, ogp)
+	err = traverse(doc, ogp)
+	if err != nil {
+		log.Fatal(err)
+		http.Error(w, "Parse error", http.StatusInternalServerError)
+		return
+	}
 
 	ogpb, err := json.Marshal(ogp)
 	if err != nil {
 		log.Fatal(err)
+		http.Error(w, "Parse error", http.StatusInternalServerError)
 		return
 	}
 
 	fmt.Fprint(w, string(ogpb))
 }
 
-func traverse(node *html.Node, ogp *OGP) {
+func traverse(node *html.Node, ogp *OGP) error {
 	if node.DataAtom == atom.Body {
-		return
+		return nil
 	}
 
 	if node.DataAtom == atom.Link {
@@ -121,6 +129,11 @@ func traverse(node *html.Node, ogp *OGP) {
 				ogp.Type = mv
 			case "og:url":
 				ogp.URL = mv
+				u, err := url.Parse(mv)
+				if err != nil {
+					return err
+				}
+				ogp.SiteURL = u.Scheme + "://" + u.Host + "/"
 			case "og:image":
 				ogp.Image = mv
 			case "og:description":
@@ -132,4 +145,6 @@ func traverse(node *html.Node, ogp *OGP) {
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
 		traverse(child, ogp)
 	}
+
+	return nil
 }
