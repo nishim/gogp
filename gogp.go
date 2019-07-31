@@ -86,7 +86,7 @@ func traverse(node *html.Node, ogp *OGP) error {
 	if node.DataAtom == atom.Link {
 		mk, mv := "", ""
 		for _, attr := range node.Attr {
-			if attr.Key == "rel" && attr.Val == "icon" {
+			if attr.Key == "rel" && (attr.Val == "icon" || attr.Val == "shortcut icon") {
 				mk = attr.Val
 				continue
 			}
@@ -99,6 +99,8 @@ func traverse(node *html.Node, ogp *OGP) error {
 
 		if mk != "" {
 			switch mk {
+			case "shortcut icon":
+				ogp.Favicon = mv
 			case "icon":
 				ogp.Favicon = mv
 			}
