@@ -91,13 +91,13 @@ func traverse(node *html.Node, ogp *OGP) error {
 				continue
 			}
 
-			if attr.Key == "href" {
+			if attr.Key == "href" && strings.HasPrefix(attr.Val, "http") {
 				mv = attr.Val
 				continue
 			}
 		}
 
-		if mk != "" {
+		if mk != "" && mv != "" {
 			switch mk {
 			case "shortcut icon":
 				ogp.Favicon = mv
@@ -121,7 +121,7 @@ func traverse(node *html.Node, ogp *OGP) error {
 			}
 		}
 
-		if mk != "" {
+		if mk != "" && mv != "" {
 			switch mk {
 			case "og:site_name":
 				ogp.SiteName = mv
